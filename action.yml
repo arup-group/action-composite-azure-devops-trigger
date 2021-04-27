@@ -62,7 +62,7 @@ runs:
             "pr.number": "${{ inputs.pr_number }}",
             "pr.isFork": "False",
             "pr.draft": "False",
-            "pr.sender.name": "$user",
+            "pr.sender.name": "${{ inputs.user_github_login }}r",
             "pr.sender.isExternal": "True",
             "pr.providerId": "github"
           }
