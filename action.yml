@@ -69,7 +69,7 @@ runs:
         }
         END
         )
-        curl -u peterjgrainger:${{ secrets.DEVOPS_TOKEN }} \
+        curl -u peterjgrainger:${{ inputs.devops_token }} \
               -H "Content-Type: application/json" \
               --request POST \
               --data "$body" \
