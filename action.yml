@@ -1,0 +1,77 @@
+name: 'Trigger Azure DevOps'
+description: 'Trigger a Azure DevOps build with a PR as trigger'
+inputs:
+  pr_id:  # id of input
+    description: 'Unique ID number for a PR (Issue number not PR number)'
+    required: true
+  user_github_login:
+    description: 'GitHub user login'
+    required: true
+  source_branch:
+    description: 'Branch the changes are in'
+    required: true
+  sha:
+    description: 'HEAD commit to be merged'
+    required: true
+  target_branch:
+    description: 'Branch the PR will be merged into'
+    required: true
+  pr_title:
+    description: 'PR title'
+    required: true
+  pr_number:
+    description: 'PR number (not PR ID)'
+    required: true
+  build_definition_id:
+    description: 'Unique Pipeline Definition ID'
+    required: true
+  repo_with_owner:
+    description: 'Repository name with owner e.g. arup-group/action-composite-azure-devops-trigger'
+  project_id:
+    description: 'Project unique GUID'
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        body=$(cat <<-END
+        {
+          "definition": {
+            "id": ${{ inputs.build_definition_id }}
+          },
+          "project": {
+            "id": "${{ inputs.project_id }}"
+          },
+          "sourceBranch": "refs/pull/${{ inputs.pr_number }}/merge",
+          "sourceVersion": "${{ inputs.sha }}",
+          "reason": "pullRequest",
+          "parameters": "{
+              \"system.pullRequest.pullRequestId\":\"${{ inputs.pr_id }}\",
+              \"system.pullRequest.pullRequestNumber\":\"${{ inputs.pr_number }}\",
+              \"system.pullRequest.mergedAt\":\"\",
+              \"system.pullRequest.sourceBranch\":\"${{ inputs.source_branch }}\",
+              \"system.pullRequest.targetBranch\":\"${{ inputs.target_branch }}\",
+              \"system.pullRequest.sourceRepositoryUri\":\"https://github.com/${{ inputs.repo_with_owner }}\",
+              \"system.pullRequest.sourceCommitId\":\"${{ inputs.sha }}\"
+          }",
+          "triggerInfo": {
+            "pr.sourceBranch": "${{ inputs.source_branch }}",
+            "pr.sourceSha": "${{ inputs.sha }}",
+            "pr.id": "${{ inputs.pr_id }}",
+            "pr.title": "${{ inputs.pr_title }}",
+            "pr.number": "${{ inputs.pr_number }}",
+            "pr.isFork": "False",
+            "pr.draft": "False",
+            "pr.sender.name": "$user",
+            "pr.sender.isExternal": "True",
+            "pr.providerId": "github"
+          }
+        }
+        END
+        )
+        curl -u peterjgrainger:${{ secrets.DEVOPS_TOKEN }} \
+              -H "Content-Type: application/json" \
+              --request POST \
+              --data "$body" \
+              https://dev.azure.com/oasys-software/OASYS%20libraries/_apis/build/builds?api-version=6.0
+      
